@@ -17,13 +17,21 @@
 // GPIO01=Tx und GPIO03=Rx werden für Realis benutzt!!!
 // d.h. wenn Logging eingeschaltet GPIOs umdefinieren
 //
-#define LOGno 
+#define LOGno
 #ifdef LOG 
 #define SERIALINIT Serial.begin(115200);
-#define Logyes
+#define LogPrintf(x) Serial.printf(x)
+#define LogPrintln(x) Serial.println(x)
+#define LogPrintf2(x,y) Serial.printf(x,y)
+#define LogPrintln2(x,y) Serial.println(x,y)
+#define LogPrintf3(x,y,z) Serial.printf(x,y,z)
 #define SetGPIO int outputGPIOs[NUM_OUTPUTS] =  {16, 5, 4, 14, 12, 12, 12, 13}; 
 #else
 #define SERIALINIT
-#define Logyes //
+#define LogPrintf(x)
+#define LogPrintln(x)
+#define LogPrintf2(x,y)
+#define LogPrintln2(x,y)
+#define LogPrintf3(x,y,z)
 #define SetGPIO int outputGPIOs[NUM_OUTPUTS] =  {16, 5, 4, 14, 3, 1, 12, 13};
 #endif

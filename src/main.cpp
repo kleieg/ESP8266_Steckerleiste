@@ -18,6 +18,8 @@
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 long My_time = 0;
+long Start_time;
+long Up_time;
 
 
 // Timers auxiliar variables
@@ -27,7 +29,7 @@ int LEDblink = 0;
 bool led = 1;
 
 // Create AsyncWebServer object on port 80
-AsyncWebServer server(80);
+AsyncWebServer Asynserver(80);
 
 // Create a WebSocket object
 AsyncWebSocket ws("/ws");
@@ -47,9 +49,9 @@ int relayResetTimer[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 // Initialize LittleFS
 void initLittleFS() {
   if (!LittleFS.begin()) {
-    Logyes Serial.println("An error has occurred while mounting LittleFS");
+    LogPrintln("An error has occurred while mounting LittleFS");
   }
-  Logyes Serial.println("LittleFS mounted successfully");
+  LogPrintln("LittleFS mounted successfully");
 }
 
 
@@ -60,7 +62,7 @@ String getOutputStates(){
   myArray["cards"][1]["c_text"] = WiFi.dnsIP().toString() + "   /   " + String(VERSION);
   myArray["cards"][2]["c_text"] = String(WiFi.RSSI());
   myArray["cards"][3]["c_text"] = String(MQTT_INTERVAL) + "ms";
-  myArray["cards"][4]["c_text"] = String(My_time);
+  myArray["cards"][4]["c_text"] = String(Up_time);
   myArray["cards"][5]["c_text"] = "WiFi = " + String(WiFi_reconnect) + "   MQTT = " + String(Mqtt_reconnect);
   myArray["cards"][6]["c_text"] = String(RELAY_RESET_INTERVAL );
   myArray["cards"][7]["c_text"] = " to reboot click ok";
@@ -91,18 +93,18 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
     // according to AsyncWebServer documentation this is ok
     data[len] = 0;
 
-    Logyes Serial.println("Data received: ");
-    Logyes Serial.printf("%s\n", data);
+    LogPrintln("Data received: ");
+    LogPrintf2("%s\n", data);
 
     JSONVar json = JSON.parse((const char *)data);
     if (json == nullptr)
     {
-      Logyes Serial.println("Request is not valid json, ignoring");
+      LogPrintln("Request is not valid json, ignoring");
       return;
     }
     if (!json.hasOwnProperty("action"))
     {
-      Logyes Serial.println("Request is not valid json, ignoring");
+      LogPrintln("Request is not valid json, ignoring");
       return;
     }
     if (!strcmp(json["action"], "states"))
@@ -111,36 +113,36 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
     }
     else if (!strcmp(json["action"], "reboot"))
     {
-      Logyes Serial.println("Reset..");
+      LogPrintln("Reset..");
       ESP.restart();
     }
     else if (!strcmp(json["action"], "relais"))
     {
       if (!json.hasOwnProperty("data"))
       {
-        Logyes Serial.println("Relais request is missing data, ignoring");
+        LogPrintln("Relais request is missing data, ignoring");
         return;
       }
       if (!json["data"].hasOwnProperty("relais"))
       {
-        Logyes Serial.println("Relais request is missing relais number, ignoring");
+        LogPrintln("Relais request is missing relais number, ignoring");
         return;
       }
       if (JSONVar::typeof_(json["data"]["relais"]) != "number")
       {
-        Logyes Serial.println("Relais request contains invali relais number, ignoring");
+        LogPrintln("Relais request contains invali relais number, ignoring");
         return;
       }
       int relais = json["data"]["relais"];
       if (relais < 0 || relais >= NUM_OUTPUTS)
       {
-        Logyes Serial.println("Relais request contains invali relais number, ignoring");
+        LogPrintln("Relais request contains invali relais number, ignoring");
         return;
       }
       
       digitalWrite(outputGPIOs[relais], !digitalRead(outputGPIOs[relais]));
       notifyClients(getOutputStates());
-      Logyes Serial.println("switch Relais");
+      LogPrintln("switch Relais");
 
       if (relayReset[relais] == "Y")
       {
@@ -153,14 +155,14 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
 }
 
 
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,AwsEventType type,
+void onEvent(AsyncWebSocket *Asynserver, AsyncWebSocketClient *client,AwsEventType type,
              void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
-      Logyes Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      LogPrintf2("WebSocket client #%u connected \n", client->id());
       break;
     case WS_EVT_DISCONNECT:
-      Logyes Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      LogPrintf2("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
       handleWebSocketMessage(arg, data, len);
@@ -175,27 +177,27 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,AwsEventType t
 // receive MQTT messages
 void MQTT_callback(char* topic, byte* message, unsigned int length) {
   
-  Logyes Serial.printf("%s","Message arrived on topic: ");
-  Logyes Serial.printf("%s\n",topic);
-  Logyes Serial.printf("%s","Data : ");
+  LogPrintf2("%s","Message arrived on topic: ");
+  LogPrintf2("%s\n",topic);
+  LogPrintf2("%s","Data : ");
 
   String MQTT_message;
   for (unsigned int i = 0; i < length; i++) {
     MQTT_message += (char)message[i];
   }
-  Logyes Serial.println(MQTT_message);
+  LogPrintln(MQTT_message);
 
   String relaisTopic = Hostname + "/CMD/Relais";
   String strTopic = String(topic);
 
   if (!strTopic.startsWith(relaisTopic) || strTopic.length() != relaisTopic.length() + 1)
   {
-    Logyes Serial.printf("Invalid topic %d, %d", strTopic.length(), relaisTopic.length());
+    LogPrintf3("Invalid topic %d, %d", strTopic.length(), relaisTopic.length());
     return;
   }
   int relais = strTopic[strTopic.length() - 1] - '0';
   if(relais < 0 || relais >= NUM_OUTPUTS) {
-    Logyes Serial.printf("Invalid relais %d", relais);
+    LogPrintf2("Invalid relais %d", relais);
     return;
   }
 
@@ -219,7 +221,7 @@ void MQTTsend () {
   JSONVar mqtt_data, actuators;
 
   String mqtt_tag = Hostname + "/STATUS";
-  Logyes Serial.printf("%s\n", mqtt_tag.c_str());
+  LogPrintf2("%s\n", mqtt_tag.c_str());
 
   char property[8];
   strcpy(property, "Relais0");
@@ -236,9 +238,9 @@ void MQTTsend () {
 
   String mqtt_string = JSON.stringify(mqtt_data);
 
-  Logyes Serial.printf("%s\n", mqtt_string.c_str());
+  LogPrintf2("%s\n", mqtt_string.c_str());
 
-  client.publish(mqtt_tag.c_str(), mqtt_string.c_str());
+  Mqttclient.publish(mqtt_tag.c_str(), mqtt_string.c_str());
 
   notifyClients(getOutputStates());
 }
@@ -248,7 +250,7 @@ void setup(){
   SERIALINIT
   delay (1000);                    // wait for serial log to be reday
 
-  Logyes Serial.printf("init GPIOs\n");
+  LogPrintf("init GPIOs\n");
   pinMode(GPIO_LED, OUTPUT);
   digitalWrite(GPIO_LED, LOW);
 
@@ -263,27 +265,30 @@ void setup(){
 
   // init Websocket
   ws.onEvent(onEvent);
-  server.addHandler(&ws);
+  Asynserver.addHandler(&ws);
 
-  Logyes Serial.printf("setup MQTT\n");
-  client.setServer(MQTT_BROKER, 1883);
-  client.setCallback(MQTT_callback);
+  LogPrintf("setup MQTT\n");
+  Mqttclient.setServer(MQTT_BROKER, 1883);
+  Mqttclient.setCallback(MQTT_callback);
 
   // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  Asynserver.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(LittleFS, "/index.html", "text/html",false);
   });
 
-  server.serveStatic("/", LittleFS, "/");
+  Asynserver.serveStatic("/", LittleFS, "/");
 
   timeClient.begin();
   timeClient.setTimeOffset(0);
+  // update UPCtime for Starttime
+  timeClient.update();
+  Start_time = timeClient.getEpochTime();
 
   // Start ElegantOTA
-  AsyncElegantOTA.begin(&server);
+  AsyncElegantOTA.begin(&Asynserver);
   
   // Start server
-  server.begin();
+  Asynserver.begin();
 }
 
 void loop() {
@@ -293,6 +298,7 @@ void loop() {
   // update UPCtime
     timeClient.update();
     My_time = timeClient.getEpochTime();
+    Up_time = My_time - Start_time;
 
   // LED blinken
     now = millis();
@@ -334,24 +340,24 @@ void loop() {
       if (now - lastReconnectAttempt > 5000) {
         lastReconnectAttempt = now;              // prevents mqtt reconnect running also
         // Attempt to reconnect
-        Logyes Serial.printf("WiFi reconnect"); 
+        LogPrintf("WiFi reconnect"); 
         reconnect_wifi();
       }
     }
 
   // check if MQTT broker is still connected
-    if (!client.connected()) {
+    if (!Mqttclient.connected()) {
       // try reconnect every 5 seconds
       if (now - lastReconnectAttempt > 5000) {
         lastReconnectAttempt = now;
         // Attempt to reconnect
-        Logyes Serial.printf("MQTT reconnect"); 
+        LogPrintf("MQTT reconnect"); 
         reconnect_mqtt();
       }
     } else {
       // Client connected
 
-      client.loop();
+      Mqttclient.loop();
 
       // send data to MQTT broker
       if (now - Mqtt_lastSend  > MQTT_INTERVAL) {

@@ -13,8 +13,8 @@ int Mqtt_reconnect = 0;
 
 
 // Initializes the espClient. 
-WiFiClient myClient;
-PubSubClient client(myClient);
+WiFiClient ethClient;
+PubSubClient Mqttclient(ethClient);
 
 // Initialize WiFi
 void initWiFi() {
@@ -27,23 +27,23 @@ void initWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.hostname(Hostname);
   WiFi.begin(ssid, password);
-  Logyes Serial.print("Connecting to WiFi ..");
+  LogPrintln("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
-    Logyes Serial.print('.');
+    LogPrintf(".");
     delay(1000);
   }
-  Logyes Serial.println(WiFi.localIP());
+  LogPrintln(WiFi.localIP());
 }
 
 // reconnect to WiFi 
 void reconnect_wifi() {
-  Logyes Serial.printf("%s\n","WiFi try reconnect"); 
+  LogPrintf2("%s\n","WiFi try reconnect"); 
   WiFi.begin();
   delay(500);
   if (WiFi.status() == WL_CONNECTED) {
     WiFi_reconnect = WiFi_reconnect + 1;
     // Once connected, publish an announcement...
-    Logyes Serial.printf("%s\n","WiFi reconnected"); 
+    LogPrintf2("%s\n","WiFi reconnected"); 
   }
 }
 
@@ -52,13 +52,13 @@ void reconnect_wifi() {
 void reconnect_mqtt() {
   String willTopic = Hostname + "/LWT";
   String cmdTopic = Hostname + "/CMD/+";
-  if (client.connect(Hostname.c_str(), willTopic.c_str(), 0, true, "Offline")) {
+  if (Mqttclient.connect(Hostname.c_str(), willTopic.c_str(), 0, true, "Offline")) {
     lastReconnectAttempt = 0;
-    Logyes Serial.printf("%s\n", "connected");
+    LogPrintf2("%s\n", "connected");
 
-    client.publish(willTopic.c_str(), "Online", true);
+    Mqttclient.publish(willTopic.c_str(), "Online", true);
 
-    client.subscribe(cmdTopic.c_str());
+    Mqttclient.subscribe(cmdTopic.c_str());
 
     Mqtt_reconnect = Mqtt_reconnect + 1;
   }
