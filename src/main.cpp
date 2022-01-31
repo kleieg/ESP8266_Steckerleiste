@@ -20,6 +20,10 @@ NTPClient timeClient(ntpUDP);
 long My_time = 0;
 long Start_time;
 long Up_time;
+long U_days;
+long U_hours;
+long U_min;
+long U_sec;
 
 
 // Timers auxiliar variables
@@ -58,11 +62,16 @@ void initLittleFS() {
 String getOutputStates(){
   JSONVar myArray;
 
+  U_days = Up_time / 86400;
+  U_hours = (Up_time % 86400) / 3600;
+  U_min = (Up_time & 3600) / 60;
+  U_sec = (Up_time % 60);
+
   myArray["cards"][0]["c_text"] = Hostname;
   myArray["cards"][1]["c_text"] = WiFi.dnsIP().toString() + "   /   " + String(VERSION);
   myArray["cards"][2]["c_text"] = String(WiFi.RSSI());
   myArray["cards"][3]["c_text"] = String(MQTT_INTERVAL) + "ms";
-  myArray["cards"][4]["c_text"] = String(Up_time);
+  myArray["cards"][4]["c_text"] = String(U_days) + " days " + String(U_hours) + ":" + String(U_min) + ":" + String(U_sec);
   myArray["cards"][5]["c_text"] = "WiFi = " + String(WiFi_reconnect) + "   MQTT = " + String(Mqtt_reconnect);
   myArray["cards"][6]["c_text"] = String(RELAY_RESET_INTERVAL );
   myArray["cards"][7]["c_text"] = " to reboot click ok";
