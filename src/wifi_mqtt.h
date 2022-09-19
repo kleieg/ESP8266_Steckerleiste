@@ -53,6 +53,7 @@ void reconnect_wifi() {
 void reconnect_mqtt() {
   String willTopic = Hostname + "/LWT";
   String cmdTopic = Hostname + "/CMD/+";
+  LogPrintf2("%s\n", "try to connect");
   if (Mqttclient.connect(Hostname.c_str(), willTopic.c_str(), 0, true, "Offline")) {
     lastReconnectAttempt = 0;
     LogPrintf2("%s\n", "connected");

@@ -360,7 +360,7 @@ void loop() {
       if (now - lastReconnectAttempt > 5000) {
         lastReconnectAttempt = now;
         // Attempt to reconnect
-        LogPrintf("MQTT reconnect"); 
+        LogPrintln("MQTT reconnect"); 
         reconnect_mqtt();
       }
     } else {
