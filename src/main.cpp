@@ -43,7 +43,7 @@ AsyncWebSocket ws("/ws");
 SetGPIO
 
 // Assign relay details
-String relayReset[NUM_OUTPUTS] = {"N", "N", "N", "Y", "Y", "Y", "Y", "Y"};
+String relayReset[NUM_OUTPUTS] = {"Y", "Y", "Y", "Y", "Y", "N", "N", "N"};
 int relayResetStatus[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 int relayResetTimer[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 
@@ -78,13 +78,7 @@ String getOutputStates(){
 
   for (int i =0; i<NUM_OUTPUTS; i++){
     myArray["gpios"][i]["output"] = String(i);
-
-    if (relayReset[i] == "Y") {
-      myArray["gpios"][i]["state"] = String(digitalRead(outputGPIOs[i]));
-    }
-      else {
-      myArray["gpios"][i]["state"] = String(!digitalRead(outputGPIOs[i]));
-    }
+    myArray["gpios"][i]["state"] = String(digitalRead(outputGPIOs[i]));
   }
   String jsonString = JSON.stringify(myArray);
   return jsonString;
@@ -213,6 +207,11 @@ void MQTT_callback(char* topic, byte* message, unsigned int length) {
   if (MQTT_message == "true")
   {
     digitalWrite(outputGPIOs[relais], LOW);
+
+    if (relayReset[relais] == "Y")
+    {
+      relayResetStatus[relais] = 1;
+    }
   }
   else if (MQTT_message == "false")
   {
@@ -235,7 +234,7 @@ void MQTTsend () {
   char property[8];
   strcpy(property, "Relais0");
 
-  for (size_t relais = 0; relais <= 6; relais++)
+  for (size_t relais = 0; relais <= 7; relais++)
   {
     property[6] = '0' + relais;
     actuators[(const char*)property] = !digitalRead(outputGPIOs[relais]) ? true : false;
