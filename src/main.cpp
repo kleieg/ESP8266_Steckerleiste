@@ -1,3 +1,6 @@
+//
+//Beim Update schlaten die Relais 7 und 8 !!! Stecker entfernen!! Keine Last !!!
+//
 
 #include <Arduino.h>
 
@@ -204,7 +207,7 @@ void MQTT_callback(char* topic, byte* message, unsigned int length) {
     return;
   }
 
-  if (MQTT_message == "true")
+  if (MQTT_message == "false")
   {
     digitalWrite(outputGPIOs[relais], LOW);
 
@@ -213,7 +216,7 @@ void MQTT_callback(char* topic, byte* message, unsigned int length) {
       relayResetStatus[relais] = 1;
     }
   }
-  else if (MQTT_message == "false")
+  else if (MQTT_message == "true")
   {
     digitalWrite(outputGPIOs[relais], HIGH);
   }
@@ -237,7 +240,7 @@ void MQTTsend () {
   for (size_t relais = 0; relais <= 7; relais++)
   {
     property[6] = '0' + relais;
-    actuators[(const char*)property] = !digitalRead(outputGPIOs[relais]) ? true : false;
+    actuators[(const char*)property] = digitalRead(outputGPIOs[relais]) ? true : false;
   }
   
   mqtt_data["Time"] = My_time;

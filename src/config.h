@@ -17,6 +17,8 @@
 // GPIO01=Tx und GPIO03=Rx werden für Realis benutzt!!!
 // d.h. wenn Logging eingeschaltet GPIOs umdefinieren
 //
+//Beim Update schlaten die Relais 7 und 8 !!! Stecker entfernen!! Keine Last !!!
+//
 #define LOGno
 #ifdef LOG 
 #define SERIALINIT Serial.begin(115200);
