@@ -12,7 +12,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-#include "WLAN_Credentials.h"
+#include "WLAN_Credentials_k.h"
 #include "config.h"
 #include "wifi_mqtt.h"
 
@@ -46,7 +46,7 @@ AsyncWebSocket ws("/ws");
 SetGPIO
 
 // Assign relay details
-String relayReset[NUM_OUTPUTS] = {"Y", "Y", "Y", "Y", "Y", "N", "N", "N"};
+String relayReset[NUM_OUTPUTS] = {"Y", "Y", "Y", "Y", "Y", "N", "N", "Y"};
 int relayResetStatus[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 int relayResetTimer[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 
