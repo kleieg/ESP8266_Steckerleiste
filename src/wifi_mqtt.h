@@ -1,4 +1,4 @@
-#include <PubSubClient.h>
+#include <MQTT.h>
 #include <ESP8266WiFi.h>
 
 // will be computed as "<HOSTNAME>_<MAC-ADDRESS>"
@@ -9,12 +9,12 @@ int WiFi_reconnect = 0;
 // for MQTT
 long Mqtt_lastSend = 0;
 long lastReconnectAttempt = 0;
-int Mqtt_reconnect = 0;
+int Mqtt_reconnect = -1;
 
 
 // Initializes the espClient. 
 WiFiClient ethClient;
-PubSubClient Mqttclient(ethClient);
+MQTTClient mqttClient(256);
 
 // Initialize WiFi
 void initWiFi() {
@@ -24,8 +24,8 @@ void initWiFi() {
   Hostname += WiFi.macAddress();
   Hostname.replace(":", "");
 
-  WiFi.mode(WIFI_STA);
   WiFi.hostname(Hostname);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   LogPrintln("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
@@ -48,20 +48,34 @@ void reconnect_wifi() {
   }
 }
 
-// This functions reconnects your ESP32 to your MQTT broker
+  void initMQTT() {
+  String willTopic = Hostname + "/LWT";
+  
+  LogPrintln("setup MQTT\n");
+  
+  mqttClient.begin(ethClient);
+  mqttClient.setHost(MQTT_BROKER, 1883);
+  mqttClient.setWill(willTopic.c_str(), "Offline", true, 0);
+}
 
-void reconnect_mqtt() {
+
+void reconnect_mqtt()
+{
   String willTopic = Hostname + "/LWT";
   String cmdTopic = Hostname + "/CMD/+";
-  LogPrintf2("%s\n", "try to connect");
-  if (Mqttclient.connect(Hostname.c_str(), willTopic.c_str(), 0, true, "Offline")) {
-    lastReconnectAttempt = 0;
-    LogPrintf2("%s\n", "connected");
 
-    Mqttclient.publish(willTopic.c_str(), "Online", true);
+  LogPrintf2("%s\n", "MQTT try reconnect");
 
-    Mqttclient.subscribe(cmdTopic.c_str());
+  Mqtt_reconnect = Mqtt_reconnect + 1;
 
-    Mqtt_reconnect = Mqtt_reconnect + 1;
+  if (mqttClient.connect(Hostname.c_str()))
+  {
+    LogPrintf2("%s\n", "MQTT connected");
+
+    mqttClient.publish(willTopic.c_str(), "Online", true, 0);
+  
+    mqttClient.subscribe(cmdTopic.c_str());
+  } else {
+    LogPrintf2("Failed to connect to broker; error: %d\n", mqttClient.lastError());
   }
 }

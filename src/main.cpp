@@ -181,33 +181,27 @@ void onEvent(AsyncWebSocket *Asynserver, AsyncWebSocketClient *client,AwsEventTy
 
 
 // receive MQTT messages
-void MQTT_callback(char* topic, byte* message, unsigned int length) {
+void MQTT_callback(String &topic, String &payload) {
   
   LogPrintf2("%s","Message arrived on topic: ");
   LogPrintf2("%s\n",topic);
   LogPrintf2("%s","Data : ");
-
-  String MQTT_message;
-  for (unsigned int i = 0; i < length; i++) {
-    MQTT_message += (char)message[i];
-  }
-  LogPrintln(MQTT_message);
+  LogPrintln(payload);
 
   String relaisTopic = Hostname + "/CMD/Relais";
-  String strTopic = String(topic);
 
-  if (!strTopic.startsWith(relaisTopic) || strTopic.length() != relaisTopic.length() + 1)
+  if (!topic.startsWith(relaisTopic) || topic.length() != relaisTopic.length() + 1)
   {
     LogPrintf3("Invalid topic %d, %d", strTopic.length(), relaisTopic.length());
     return;
   }
-  int relais = strTopic[strTopic.length() - 1] - '0';
+  int relais = topic[topic.length() - 1] - '0';
   if(relais < 0 || relais >= NUM_OUTPUTS) {
     LogPrintf2("Invalid relais %d", relais);
     return;
   }
 
-  if (MQTT_message == "false")
+  if (payload == "false")
   {
     digitalWrite(outputGPIOs[relais], LOW);
 
@@ -216,7 +210,7 @@ void MQTT_callback(char* topic, byte* message, unsigned int length) {
       relayResetStatus[relais] = 1;
     }
   }
-  else if (MQTT_message == "true")
+  else if (payload == "true")
   {
     digitalWrite(outputGPIOs[relais], HIGH);
   }
@@ -251,7 +245,7 @@ void MQTTsend () {
 
   LogPrintf2("%s\n", mqtt_string.c_str());
 
-  Mqttclient.publish(mqtt_tag.c_str(), mqtt_string.c_str());
+  mqttClient.publish(mqtt_tag.c_str(), mqtt_string.c_str());
 
   notifyClients(getOutputStates());
 }
@@ -279,8 +273,8 @@ void setup(){
   Asynserver.addHandler(&ws);
 
   LogPrintf("setup MQTT\n");
-  Mqttclient.setServer(MQTT_BROKER, 1883);
-  Mqttclient.setCallback(MQTT_callback);
+  initMQTT();
+  mqttClient.onMessage(MQTT_callback);
 
   // Route for root / web page
   Asynserver.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -357,7 +351,7 @@ void loop() {
     }
 
   // check if MQTT broker is still connected
-    if (!Mqttclient.connected()) {
+    if (!mqttClient.connected()) {
       // try reconnect every 5 seconds
       if (now - lastReconnectAttempt > 5000) {
         lastReconnectAttempt = now;
@@ -368,7 +362,7 @@ void loop() {
     } else {
       // Client connected
 
-      Mqttclient.loop();
+      mqttClient.loop();
 
       // send data to MQTT broker
       if (now - Mqtt_lastSend  > MQTT_INTERVAL) {
