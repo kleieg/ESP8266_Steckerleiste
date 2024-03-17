@@ -39,7 +39,7 @@ void initWiFi() {
 void reconnect_wifi() {
   LogPrintf2("%s\n","WiFi try reconnect"); 
   WiFi_reconnect = WiFi_reconnect + 1;
-  WiFi.disconnect();
+  //WiFi.disconnect();  löscht credentials !!
   WiFi.reconnect();
   delay(500);
   if (WiFi.status() == WL_CONNECTED) {
