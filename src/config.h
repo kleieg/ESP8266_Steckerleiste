@@ -1,7 +1,7 @@
 // set hostname used for MQTT tag and WiFi
 #define HOSTNAME "ESPsteckerleiste"
 #define MQTT_BROKER "192.168.178.15"
-#define VERSION "v 5.1.0"
+#define VERSION "v 5.2.0"
 
 #define MQTT_INTERVAL 120000
 #define RECONNECT_INTERVAL 5000
@@ -17,7 +17,7 @@
 // GPIO01=Tx und GPIO03=Rx werden für Realis benutzt!!!
 // d.h. wenn Logging eingeschaltet GPIOs umdefinieren
 //
-//Beim Update schlaten die Relais 7 und 8 !!! Stecker entfernen!! Keine Last !!!
+//Beim Update schalten die Relais 7 und 8 !!! Stecker entfernen!! Keine Last !!!
 //
 #define LOGno
 #ifdef LOG 

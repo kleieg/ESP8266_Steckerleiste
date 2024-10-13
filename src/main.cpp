@@ -46,7 +46,7 @@ AsyncWebSocket ws("/ws");
 SetGPIO
 
 // Assign relay details
-String relayReset[NUM_OUTPUTS] = {"Y", "Y", "Y", "Y", "Y", "N", "N", "Y"};
+String relayReset[NUM_OUTPUTS] = {"Y", "Y", "Y", "Y", "Y", "N", "N", "N"};
 int relayResetStatus[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 int relayResetTimer[NUM_OUTPUTS] = {0,0,0,0,0,0,0,0};
 
